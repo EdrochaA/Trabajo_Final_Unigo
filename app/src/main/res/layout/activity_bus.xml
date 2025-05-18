@@ -1,29 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/layout_bus"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.BusActivity">
+    android:layout_height="match_parent">
 
+    <!-- MAPA -->
     <org.osmdroid.views.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Botón de volver -->
+    <!-- BOTÓN ATRÁS -->
     <ImageButton
         android:id="@+id/btn_back"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="16dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
         android:layout_marginTop="40dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@android:color/transparent"
+        android:scaleType="centerInside"
         android:src="@drawable/ic_arrow_back"
-        android:contentDescription="Volver"
+        android:contentDescription="Atrás" />
+
+    <!-- BOTÓN DESPLEGAR PANEL -->
+    <ImageButton
+        android:id="@+id/btn_toggle_panel"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="8dp"
+        android:background="@android:color/transparent"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_menu"
+        android:contentDescription="Mostrar paradas" />
+
+    <!-- CARDVIEW INFORMACIÓN -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="70dp"
+        card_view:cardCornerRadius="12dp"
+        card_view:cardElevation="6dp"
         android:clickable="true"
-        android:focusable="true"
-        android:elevation="8dp"/>
+        android:foreground="?attr/selectableItemBackground">
+
+        <TextView
+            android:id="@+id/tv_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Información"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:padding="16dp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- PANEL DESPLEGABLE PARADAS CON MÁRGENES -->
+    <ScrollView
+        android:id="@+id/panel_ruta"
+        android:layout_width="250dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="100dp"
+        android:layout_marginBottom="100dp"
+        android:layout_marginEnd="0dp"
+        android:background="#E6FFFFFF"
+        android:visibility="gone"
+        android:translationX="250dp"
+        android:animateLayoutChanges="true">
+
+        <LinearLayout
+            android:id="@+id/lista_paradas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="12dp">
+
+            <!-- TÍTULO DE LA SECCIÓN -->
+            <TextView
+                android:id="@+id/titulo_paradas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Paradas"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:paddingBottom="8dp"
+                android:textColor="@android:color/black" />
+        </LinearLayout>
+    </ScrollView>
 
 </RelativeLayout>

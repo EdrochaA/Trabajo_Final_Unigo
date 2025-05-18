@@ -11,6 +11,9 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 import android.view.View;
 import android.widget.TextView;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.DashPathEffect;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,14 +42,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class WalkActivity extends AppCompatActivity {
-    private static final int REQUEST_PERMS    = 123;
+    private static final int REQUEST_PERMS = 123;
     private static final int REQUEST_LOCATION = 1;
 
-    // Punto para centrar inicialmente el mapa (Vitoria-Gasteiz)
-    private static final GeoPoint DEFAULT_CENTER = new GeoPoint(42.8467, -2.6731);
-    // Coordenadas exactas del Campus Álava (C. Comandante Izarduy, 2)
     private static final GeoPoint CAMPUS_LOCATION = new GeoPoint(42.839448, -2.670349);
-    // Distancia máxima (en metros) desde DEFAULT_CENTER para validar lectura
     private static final float MAX_DIST_METERS = 50_000f;
 
     private MapView map;
@@ -54,6 +53,8 @@ public class WalkActivity extends AppCompatActivity {
     private FusedLocationProviderClient locClient;
     private ImageButton btnBack;
     private TextView tvInfo;
+
+    private GeoPoint ubicacionAleatoria;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,29 +65,15 @@ public class WalkActivity extends AppCompatActivity {
         );
         setContentView(R.layout.activity_walk);
 
-        // Encuentra el botón de volver
         btnBack = findViewById(R.id.btn_back);
-        tvInfo  = findViewById(R.id.tv_info);
-
+        tvInfo = findViewById(R.id.tv_info);
         tvInfo.setVisibility(View.GONE);
 
-        // Comprueba en el log si la referencia es nula
-        if (btnBack == null) {
-            Log.d("WalkActivity", "btnBack es null! ¿Layout correcto?");;
-        } else {
-            // Asegura que el botón esté por delante de la vista de mapa
+        if (btnBack != null) {
             btnBack.bringToFront();
-
-            // Listener con Toast para verificar el clic
             btnBack.setOnClickListener(v -> {
-                Toast.makeText(this, "Botón Atrás pulsado", Toast.LENGTH_SHORT).show();
-
-                // Intent de vuelta a MainMenuActivity
                 Intent intent = new Intent(this, MainMenuActivity.class);
-                intent.addFlags(
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                                Intent.FLAG_ACTIVITY_SINGLE_TOP
-                );
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
                 finish();
             });
@@ -96,15 +83,10 @@ public class WalkActivity extends AppCompatActivity {
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
         mapController = map.getController();
-        mapController.setZoom(15.0);
+        mapController.setZoom(14.5);
 
-        // Centro y marcador inicial en Vitoria-Gasteiz
-//        mapController.setCenter(DEFAULT_CENTER);
-//        Marker defaultMarker = new Marker(map);
-//        defaultMarker.setPosition(DEFAULT_CENTER);
-//        defaultMarker.setTitle("Vitoria-Gasteiz");
-//        defaultMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-//        map.getOverlays().add(defaultMarker);
+        ubicacionAleatoria = generarUbicacionDentroVitoria();
+        mapController.setCenter(ubicacionAleatoria);
 
         locClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -141,80 +123,17 @@ public class WalkActivity extends AppCompatActivity {
     }
 
     private void setupMap() {
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    REQUEST_LOCATION
-            );
-            return;
-        }
-
-        LocationRequest req = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(0)
-                .setNumUpdates(1);
-
-        locClient.requestLocationUpdates(
-                req,
-                new LocationCallback() {
-                    @Override
-                    public void onLocationResult(@NonNull LocationResult result) {
-                        Location loc = result.getLastLocation();
-                        handleLocation(loc);
-                        locClient.removeLocationUpdates(this);
-                    }
-                },
-                Looper.getMainLooper()
-        );
-    }
-
-    private void handleLocation(Location loc) {
-        if (loc == null) {
-            fallbackToDefault();
-            return;
-        }
-        float[] dist = new float[1];
-        Location.distanceBetween(
-                loc.getLatitude(), loc.getLongitude(),
-                DEFAULT_CENTER.getLatitude(), DEFAULT_CENTER.getLongitude(),
-                dist
-        );
-        if (dist[0] > MAX_DIST_METERS) {
-            fallbackToDefault();
-        } else {
-            GeoPoint start = new GeoPoint(loc.getLatitude(), loc.getLongitude());
-            mapController.setCenter(start);
-            addUserMarker(start);
-
-            // Marcador y ruta hacia la ubicación exacta del campus
-            addDestMarker(CAMPUS_LOCATION, "Campus Álava");
-            drawRoute(start, CAMPUS_LOCATION);
-        }
-    }
-
-    private void fallbackToDefault() {
-        Toast.makeText(
-                this,
-                "No hay ubicación válida. Centrado en Vitoria-Gasteiz",
-                Toast.LENGTH_SHORT
-        ).show();
-        mapController.setCenter(DEFAULT_CENTER);
+        // Usamos directamente la ubicación aleatoria simulada
+        GeoPoint start = ubicacionAleatoria;
+        addUserMarker(start);
+        addDestMarker(CAMPUS_LOCATION, "Campus Álava");
+        drawRoute(start, CAMPUS_LOCATION);
     }
 
     private void addUserMarker(GeoPoint p) {
         Marker m = new Marker(map);
         m.setPosition(p);
-        m.setTitle("Tu posición");
+        m.setTitle("Ubicación simulada");
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(m);
     }
@@ -224,6 +143,7 @@ public class WalkActivity extends AppCompatActivity {
         m.setPosition(p);
         m.setTitle(title);
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        m.setIcon(getResources().getDrawable(R.drawable.ic_campus_red, getTheme()));
         map.getOverlays().add(m);
     }
 
@@ -238,29 +158,23 @@ public class WalkActivity extends AppCompatActivity {
         new Thread(() -> {
             Road road = roadManager.getRoad(waypoints);
 
-            Log.d("WalkActivity", String.format(
-                    Locale.getDefault(),
-                    "Road computation: status=%d, lengthMeters=%.2f",
-                    road.mStatus,
-                    road.mLength
-            ));
-
             runOnUiThread(() -> {
                 if (road.mStatus != Road.STATUS_OK) {
                     Log.e("WalkActivity", "Error al calcular ruta, status=" + road.mStatus);
                     return;
                 }
 
-                // 1) Dibujamos la ruta
-                Polyline routeOverlay = RoadManager.buildRoadOverlay(road);
-                map.getOverlays().add(routeOverlay);
+                Polyline overlay = RoadManager.buildRoadOverlay(road);
+                Paint paint = overlay.getPaint();
+                paint.setColor(Color.RED);
+                paint.setStrokeWidth(8f);
+                paint.setPathEffect(new DashPathEffect(new float[]{10, 10}, 0));
+
+                map.getOverlays().add(overlay);
                 map.invalidate();
 
-                // 2) Calculamos distancia y tiempo
                 double distanciaKm = road.mLength;
                 int minutos = (int) Math.round((distanciaKm / 5.0) * 60);
-
-                // 3) ACTUALIZAMOS EL TEXTVIEW
                 String info = String.format(
                         Locale.getDefault(),
                         "Dist: %.2f km\nTiempo: %d min",
@@ -271,10 +185,16 @@ public class WalkActivity extends AppCompatActivity {
                 tvInfo.bringToFront();
                 tvInfo.invalidate();
                 tvInfo.requestLayout();
-
-                //Log.d("WalkActivity", "tvInfo actualizado a: [" + info + "]");
             });
         }).start();
+    }
+
+    private GeoPoint generarUbicacionDentroVitoria() {
+        double minLat = 42.82, maxLat = 42.87;
+        double minLon = -2.71, maxLon = -2.64;
+        double lat = minLat + Math.random() * (maxLat - minLat);
+        double lon = minLon + Math.random() * (maxLon - minLon);
+        return new GeoPoint(lat, lon);
     }
 
     @Override
@@ -284,8 +204,7 @@ public class WalkActivity extends AppCompatActivity {
             @NonNull int[] grantResults
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if ((requestCode == REQUEST_PERMS ||
-                requestCode == REQUEST_LOCATION)
+        if ((requestCode == REQUEST_PERMS || requestCode == REQUEST_LOCATION)
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             setupMap();

@@ -84,7 +84,14 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<LoginResponse> call, Throwable t) {
-                showErrorDialog("Fallo de conexión", t.getMessage());
+                if (t instanceof java.net.UnknownHostException) {
+                    showErrorDialog("Sin conexión", "Verifica tu conexión a Internet.");
+                } else if (t instanceof java.net.SocketTimeoutException) {
+                    showErrorDialog("Servidor ocupado", "El servidor tardó demasiado en responder.");
+                } else {
+                    showErrorDialog("Error desconocido", t.getMessage());
+                }
+                android.util.Log.e("LOGIN_ERROR", "Error técnico: ", t);
             }
         });
     }
